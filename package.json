@@ -1,0 +1,13 @@
+{
+  "name": "react-swsr",
+  "version": "0.0.1",
+  "author": "wmh",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm run -r build"
+  },
+  "devDependencies": {
+    "tsup": "8.2.4",
+    "typescript": "5.6.2"
+  }
+}

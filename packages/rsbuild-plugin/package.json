@@ -1,0 +1,31 @@
+{
+  "name": "@react-swsr/rsbuild-plugin",
+  "version": "0.0.1",
+  "description": "Build swsr bundle for react swsr",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "keywords": [
+    "swsr",
+    "service-worker"
+  ],
+  "files": [
+    "dist"
+  ],
+  "author": "wmh",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup && cp -f src/entry.template.jsx dist"
+  },
+  "dependencies": {
+    "@react-swsr/runtime": "workspace:*",
+    "@react-swsr/shared": "workspace:*",
+    "@rsbuild/core": "1",
+    "cheerio": "1"
+  },
+  "devDependencies": {
+    "@types/node": "16"
+  },
+  "engines": {
+    "node": ">= 16"
+  }
+}

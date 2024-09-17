@@ -1,0 +1,8 @@
+.skeleton {
+  border-radius: 4px;
+  background-color: rgb(218, 218, 218);
+}
+
+.skeleton + .skeleton {
+  margin-top: 12px;
+}

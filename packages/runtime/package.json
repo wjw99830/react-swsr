@@ -1,0 +1,32 @@
+{
+  "name": "@react-swsr/runtime",
+  "version": "0.0.1",
+  "description": "Runtime api for react swsr",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "keywords": [
+    "swsr",
+    "service-worker",
+    "react",
+    "ssr"
+  ],
+  "files": [
+    "dist"
+  ],
+  "author": "wmh",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup"
+  },
+  "peerDependencies": {
+    "react": "18"
+  },
+  "dependencies": {
+    "@react-swsr/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "react": "18",
+    "@types/react": "18"
+  }
+}
