@@ -22,9 +22,6 @@
   "peerDependencies": {
     "react": "18"
   },
-  "dependencies": {
-    "@react-swsr/shared": "workspace:*"
-  },
   "devDependencies": {
     "react": "18",
     "@types/react": "18"

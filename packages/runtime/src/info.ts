@@ -1,4 +1,4 @@
-import { ScriptPlaceholder } from "@react-swsr/shared";
+import { ScriptPlaceholder } from "../../shared";
 import { ISwsrInfo } from "./typings";
 
 export function getSwsrInfo(): ISwsrInfo {

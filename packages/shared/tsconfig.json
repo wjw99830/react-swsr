@@ -7,5 +7,5 @@
     "skipLibCheck": true,
     "moduleResolution": "Node"
   },
-  "include": ["src"]
+  "include": ["index.ts"]
 }

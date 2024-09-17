@@ -2,7 +2,7 @@ import { posix } from "path";
 import * as cheerio from "cheerio";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { HtmlRspackPlugin, RsbuildPlugin, type Rspack } from "@rsbuild/core";
-import { ScriptPlaceholder } from "@react-swsr/shared";
+import { ScriptPlaceholder } from "../../shared";
 
 const EnvironmentName = "swsr";
 const EntryDirName = posix.resolve("./node_modules/.swsr");

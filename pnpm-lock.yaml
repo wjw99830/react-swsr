@@ -48,9 +48,6 @@ importers:
       '@react-swsr/runtime':
         specifier: workspace:*
         version: link:../runtime
-      '@react-swsr/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@rsbuild/core':
         specifier: '1'
         version: 1.0.4
@@ -63,10 +60,6 @@ importers:
         version: 16.18.108
 
   packages/runtime:
-    dependencies:
-      '@react-swsr/shared':
-        specifier: workspace:*
-        version: link:../shared
     devDependencies:
       '@types/react':
         specifier: '18'
@@ -74,8 +67,6 @@ importers:
       react:
         specifier: '18'
         version: 18.3.1
-
-  packages/shared: {}
 
 packages:
 
