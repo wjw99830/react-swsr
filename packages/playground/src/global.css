@@ -1,0 +1,21 @@
+body {
+  margin: 0 12px;
+  overflow: scroll;
+}
+
+.flex {
+  display: flex;
+}
+
+.jb {
+  justify-content: space-between;
+}
+
+.ac {
+  align-items: center;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+}

@@ -1,0 +1,18 @@
+#root {
+  margin: 0 auto;
+  max-width: 800px;
+}
+
+.comment + .comment {
+  margin-top: 24px;
+}
+
+.comment-name {
+  font-weight: bold;
+  font-size: large;
+  line-height: 24px;
+}
+
+.comment-body {
+  line-height: 24px;
+}

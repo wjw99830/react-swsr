@@ -1,11 +1,23 @@
-import './index.css';
-import { FC } from 'react';
+import "./index.css";
+import { CSSProperties, FC } from "react";
 
 interface ISkeletonProps {
-  width: number;
-  height?: number;
+  width: number | string;
+  height?: number | string;
+  Tag?: keyof JSX.IntrinsicElements;
+  className?: string;
+  style?: CSSProperties;
 }
 
-export const Skeleton: FC<ISkeletonProps> = ({ width, height = 32 }) => (
-  <div className="skeleton" style={{ width, height }}></div>
+export const Skeleton: FC<ISkeletonProps> = ({
+  width,
+  height = 24,
+  Tag = "div",
+  className = "",
+  style,
+}) => (
+  <Tag
+    className={`skeleton ${className}`}
+    style={{ width, height, ...style }}
+  />
 );

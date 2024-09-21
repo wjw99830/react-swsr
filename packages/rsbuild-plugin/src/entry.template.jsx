@@ -34,17 +34,21 @@ addEventListener("activate", (e) => {
 });
 
 addEventListener("fetch", (e) => {
+  /** @type {Request} */
   const request = e.request;
+  const url = new URL(request.url);
+  const key = url.origin + url.pathname;
+
   e.respondWith(
     caches.open("swsr").then((cache) =>
-      cache.match(request).then((response) => {
+      cache.match(key).then((response) => {
         if (response) {
           return response.text().then((template) => {
             if (
               !Version ||
               template.includes(`<!-- __SWSR_VERSION_${Version}__ -->`)
             ) {
-              return render(template)
+              return render(template, request)
                 .then(
                   (response) =>
                     new Response(response, {
@@ -66,7 +70,16 @@ addEventListener("fetch", (e) => {
                 });
             }
 
-            return fetch(request);
+            return fetch(request).then((response) => {
+              if (response.status === 200) {
+                /* @__PURE__ */ log("Activated");
+                cache.put(TemplateUrl, response.clone());
+              } else {
+                /* @__PURE__ */ log("Failed to fetch " + TemplateUrl);
+              }
+
+              return response;
+            });
           });
         }
 
@@ -76,28 +89,50 @@ addEventListener("fetch", (e) => {
   );
 });
 
-function render(template) {
+/**
+ *
+ * @param {Response} response
+ */
+function cacheTemplate(response) {
+  if (response.status === 200) {
+    /* @__PURE__ */ log("Activated");
+    return cache.put(TemplateUrl, response.clone());
+  }
+
+  /* @__PURE__ */ log("Failed to fetch " + TemplateUrl);
+
+  return response;
+}
+
+/**
+ *
+ * @param {string} template
+ * @param {Request} request
+ * @returns
+ */
+function render(template, request) {
   if ("{{mode}}" === "string") {
     return new Promise((resolve, reject) => {
       try {
-        resolve(renderToStringHTML(template));
+        resolve(renderToStringHTML(template, request));
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  return renderToStreamingHTML(template);
+  return renderToStreamingHTML(template, request);
 }
 
 /**
  *
  * @param {string} template
+ * @param {Request} request
  * @returns {string}
  */
-function renderToStringHTML(template) {
+function renderToStringHTML(template, request) {
   const keys = Object.keys(worker);
-  const promises = keys.map((key) => worker[key]());
+  const promises = keys.map((key) => worker[key](request));
   return Promise.all(promises).then((values) => {
     const chunks = values.reduce((chunks, value, i) => {
       chunks[keys[i]] = value;
@@ -122,12 +157,13 @@ function renderToStringHTML(template) {
 /**
  *
  * @param {string} template
+ * @param {Request} request
  * @returns {Promise<ReadableStream>}
  */
-function renderToStreamingHTML(template) {
+function renderToStreamingHTML(template, request) {
   const keys = Object.keys(worker);
   /** @type {{ key: string; promise: Promise<unknown> }[]} */
-  const chunks = keys.map((key) => ({ key, promise: worker[key]() }));
+  const chunks = keys.map((key) => ({ key, promise: worker[key](request) }));
   const ts = new TransformStream(
     undefined,
     { highWaterMark: 0 },

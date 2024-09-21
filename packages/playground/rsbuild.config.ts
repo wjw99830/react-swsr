@@ -26,7 +26,7 @@ export default defineConfig({
     }),
   ],
   source: {
-    preEntry: ["./src/global.ts"],
+    preEntry: ["./src/global.ts", "./src/global.css"],
     entry: {
       main: "./src/pages/main/index.tsx",
       stream: "./src/pages/stream/index.tsx",
