@@ -14,7 +14,8 @@
   "author": "wmh",
   "license": "MIT",
   "scripts": {
-    "build": "tsup && cp -f src/entry.template.jsx dist"
+    "build": "tsup && cp -f src/entry.template.jsx dist",
+    "version": "git add -A && git commit -m \"chore: versioning\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
   },
   "dependencies": {
     "@react-swsr/runtime": "workspace:*",
