@@ -1,5 +1,9 @@
 # @react-swsr/rsbuild-plugin
 
+## 0.0.3
+
+- Based on @react-swsr/rspack-plugin
+
 ## 0.0.2
 
 - Add the request parameter for worker function
