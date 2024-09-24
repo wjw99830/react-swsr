@@ -5,25 +5,30 @@ import { swsr } from "@react-swsr/rsbuild-plugin";
 export default defineConfig({
   plugins: [
     pluginReact(),
-    swsr({
-      filename: "[name]/index.swsr.js",
-      entries: [
-        {
-          mode: "stream",
-          name: "stream",
-          html: `/stream/index.html`,
-          app: "./src/pages/stream/app.tsx",
-          worker: "./src/pages/stream/worker.ts",
+    swsr([
+      {
+        entry: "stream",
+        mode: "stream",
+        html: {
+          match: (outputName) => outputName.endsWith("stream/index.html"),
+          pattern: /stream\/index\.html/,
         },
-        {
-          mode: "string",
-          name: "string",
-          html: `/string/index.html`,
-          app: "./src/pages/string/app.tsx",
-          worker: "./src/pages/string/worker.ts",
+        app: "./src/pages/stream/app.tsx",
+        worker: "./src/pages/stream/worker.ts",
+        filename: "stream/swsr.js",
+      },
+      {
+        entry: "string",
+        mode: "string",
+        html: {
+          match: (outputName) => outputName.endsWith("string/index.html"),
+          pattern: /string\/index\.html/,
         },
-      ],
-    }),
+        app: "./src/pages/string/app.tsx",
+        worker: "./src/pages/string/worker.ts",
+        filename: "string/swsr.js",
+      },
+    ]),
   ],
   source: {
     preEntry: ["./src/global.ts", "./src/global.css"],
@@ -35,22 +40,10 @@ export default defineConfig({
   },
   html: {
     outputStructure: "nested",
+    template: "./src/template.html",
   },
   server: {
     open: false,
-    proxy: {
-      "/random": {
-        target: "http://localhost:3000",
-        bypass: function (req, res) {
-          if (req.url === "/random") {
-            const random = Math.floor(Math.random() * 1000);
-            res.setHeader("Content-Type", "application/json");
-            res.end("" + random);
-            return "/random";
-          }
-        },
-      },
-    },
   },
   dev: {
     writeToDisk: true,

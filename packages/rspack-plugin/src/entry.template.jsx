@@ -4,105 +4,56 @@ import App from "{{app}}";
 
 const { StreamContext, StringContext, log } = __internal__;
 const worker = require("{{worker}}");
-const Version = "{{version}}";
+
 const ContentPlaceholder = "{{ContentPlaceholder}}";
 const ScriptPlaceholder = "{{ScriptPlaceholder}}";
-const TemplateUrl = "{{template}}";
+const TemplateContent = `{{templateContent}}`;
+const TemplatePattern = /{{templatePattern}}/;
 const StreamEnding = "__SWSR_STREAM_ENDING__";
 const StreamEndingRegex = new RegExp(`${StreamEnding}$`);
+
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
 addEventListener("install", () => {
   skipWaiting();
-});
-
-addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.open("swsr").then((cache) => {
-      cache.delete(TemplateUrl);
-      return fetch(TemplateUrl).then((response) => {
-        if (response.status === 200) {
-          /* @__PURE__ */ log("Activated");
-          return cache.put(TemplateUrl, response);
-        }
-
-        /* @__PURE__ */ log("Failed to fetch " + TemplateUrl);
-      });
-    })
-  );
+  /* @__PURE__ */ log("Activated");
 });
 
 addEventListener("fetch", (e) => {
   /** @type {Request} */
   const request = e.request;
-  const url = new URL(request.url);
-  const key = url.origin + url.pathname;
+  const { pathname } = new URL(request.url);
+
+  console.log("TemplatePattern", TemplatePattern);
+  console.log("pathname", pathname);
+  console.log("match", TemplatePattern.test(pathname));
 
   e.respondWith(
-    caches.open("swsr").then((cache) =>
-      cache.match(key).then((response) => {
-        if (response) {
-          return response.text().then((template) => {
-            if (
-              !Version ||
-              template.includes(`<!-- __SWSR_VERSION_${Version}__ -->`)
-            ) {
-              return render(template, request)
-                .then(
-                  (response) =>
-                    new Response(response, {
-                      status: 200,
-                      headers: {
-                        "Content-Type": "text/html",
-                        ...("{{mode}}" === "stream"
-                          ? { "Transfer-Encoding": "chunked" }
-                          : {}),
-                      },
-                    })
-                )
-                .catch((error) => {
-                  console.error(error);
-                  /* @__PURE__ */ log(
-                    "Failed to render due to error above, fallback to CSR"
-                  );
-                  return fetch(request);
-                });
-            }
-
-            return fetch(request).then((response) => {
-              if (response.status === 200) {
-                /* @__PURE__ */ log("Activated");
-                cache.put(TemplateUrl, response.clone());
-              } else {
-                /* @__PURE__ */ log("Failed to fetch " + TemplateUrl);
-              }
-
-              return response;
-            });
-          });
-        }
-
-        return fetch(request);
-      })
-    )
+    request.mode === "navigate" && TemplatePattern.test(pathname)
+      ? render(TemplateContent, request)
+          .then(
+            (response) =>
+              new Response(response, {
+                status: 200,
+                headers: {
+                  "Content-Type": "text/html",
+                  ...("{{mode}}" === "stream"
+                    ? { "Transfer-Encoding": "chunked" }
+                    : {}),
+                },
+              })
+          )
+          .catch((error) => {
+            console.error(error);
+            /* @__PURE__ */ log(
+              "Failed to render due to error above, fallback to CSR"
+            );
+            return fetch(request);
+          })
+      : fetch(request)
   );
 });
-
-/**
- *
- * @param {Response} response
- */
-function cacheTemplate(response) {
-  if (response.status === 200) {
-    /* @__PURE__ */ log("Activated");
-    return cache.put(TemplateUrl, response.clone());
-  }
-
-  /* @__PURE__ */ log("Failed to fetch " + TemplateUrl);
-
-  return response;
-}
 
 /**
  *

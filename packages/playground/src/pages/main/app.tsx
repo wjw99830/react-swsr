@@ -7,13 +7,13 @@ export const App: FC = () => {
       <h1>Main</h1>
       <button
         style={{ display: "block", marginBottom: 24 }}
-        onClick={() => register("../stream/index.swsr.js")}
+        onClick={() => register("../stream/swsr.js")}
       >
         streaming rendering
       </button>
       <button
         style={{ display: "block" }}
-        onClick={() => register("../string/index.swsr.js")}
+        onClick={() => register("../string/swsr.js")}
       >
         string rendering
       </button>

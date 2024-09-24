@@ -4,6 +4,7 @@
   "author": "wmh",
   "license": "MIT",
   "scripts": {
+    "clean": "rm -rf ./node_modules ./packages/*/node_modules ./packages/*/dist",
     "build": "pnpm run -r build"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
-  "name": "@react-swsr/rsbuild-plugin",
-  "version": "0.0.2",
+  "name": "@react-swsr/rspack-plugin",
+  "version": "0.0.1",
   "description": "Build swsr bundle for react swsr",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,12 +14,21 @@
   "author": "wmh",
   "license": "MIT",
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && cp -f src/entry.template.jsx dist",
     "version": "git add -A && git commit -m \"chore: versioning\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
   },
   "dependencies": {
-    "@react-swsr/rspack-plugin": "workspace:*",
-    "@rsbuild/core": "1"
+    "@rspack/core": "1",
+    "cheerio": "1",
+    "lodash": "4",
+    "rslog": "1",
+    "webpack-merge": ">= 4"
+  },
+  "devDependencies": {
+    "@rspack/lite-tapable": "^1.0.0",
+    "@types/lodash": "^4.17.7",
+    "@types/node": "16",
+    "type-fest": "^4.26.1"
   },
   "engines": {
     "node": ">= 16"
