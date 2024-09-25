@@ -1,14 +1,11 @@
-import "./app.css";
-import { Use, useStreamChunks } from "@react-swsr/runtime";
-import { Skeleton } from "../../components/skeleton";
-import { getPost, getComments } from "./worker";
-import { IComment, IPost } from "../../typings/json-placeholder";
+import './app.css';
+import { Use, useStreamChunks } from '@react-swsr/runtime';
+import { Skeleton } from '../../components/skeleton';
+import { getPost, getComments } from './worker';
+import { IComment, IPost } from '../../typings/json-placeholder';
 
 export default () => {
-  const chunks = useStreamChunks<{
-    getPost: IPost;
-    getComments: IComment[];
-  }>() || {
+  const chunks = useStreamChunks<{ getPost: IPost; getComments: IComment[] }>() || {
     getPost: getPost(new Request(location.href)),
     getComments: getComments(new Request(location.href)),
   };
