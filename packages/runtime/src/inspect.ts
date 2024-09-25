@@ -9,7 +9,7 @@ export function inspect() {
   const runtime = getSwsrInfo();
 
   if (runtime.enabled) {
-    /* @__PURE__ */ log(
+    log(
       "SWSR " +
         (runtime.mode
           ? `running on ${runtime.mode} mode`
