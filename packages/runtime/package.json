@@ -1,6 +1,6 @@
 {
   "name": "@react-swsr/runtime",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Runtime api for react swsr",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -17,7 +17,8 @@
   "author": "wmh",
   "license": "MIT",
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "version": "git add -A && git commit -m \"chore(runtime): release\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
   },
   "peerDependencies": {
     "react": "18"

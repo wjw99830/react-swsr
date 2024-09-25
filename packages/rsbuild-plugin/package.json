@@ -15,7 +15,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsup",
-    "version": "git add -A && git commit -m \"chore: versioning\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
+    "version": "git add -A && git commit -m \"chore(rsbuild-plugin): release\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
   },
   "dependencies": {
     "@react-swsr/rspack-plugin": "workspace:*",
