@@ -10,8 +10,8 @@ export default defineConfig({
         entry: "stream",
         mode: "stream",
         html: {
-          match: (outputName) => outputName.endsWith("stream/index.html"),
-          pattern: /stream\/index\.html/,
+          filename: "stream/index.html",
+          route: /stream\/(index(\.html?)?)?/,
         },
         app: "./src/pages/stream/app.tsx",
         worker: "./src/pages/stream/worker.ts",
@@ -21,8 +21,8 @@ export default defineConfig({
         entry: "string",
         mode: "string",
         html: {
-          match: (outputName) => outputName.endsWith("string/index.html"),
-          pattern: /string\/index\.html/,
+          filename: "string/index.html",
+          route: /string\/(index(\.html?)?)?/,
         },
         app: "./src/pages/string/app.tsx",
         worker: "./src/pages/string/worker.ts",
@@ -41,6 +41,9 @@ export default defineConfig({
   html: {
     outputStructure: "nested",
     template: "./src/template.html",
+  },
+  output: {
+    polyfill: "usage",
   },
   server: {
     open: false,

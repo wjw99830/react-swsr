@@ -30,14 +30,14 @@ export { SwsrRspackPluginName } from "./constants";
 export interface ISwsrRspackPluginHtmlOptions {
   /**
    * match the corresponding html file to inline into swsr.js
-   * @default true
+   * @default "index.html"
    */
-  match?: true | ((outputName: string) => boolean);
+  filename?: string | RegExp;
   /**
-   * match the corresponding navigation request by pathname of `URL` object in service worker
-   * @default /index\.html$/
+   * match the navigation request
+   * @default "index.html"
    */
-  pattern?: RegExp;
+  route?: string | RegExp;
   /**
    * inject some html content for rendering
    * @default rspack.HtmlRspackPlugin.getCompilationHooks
@@ -83,8 +83,8 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       filename: "swsr.js",
       ...options,
       html: {
-        match: true,
-        pattern: /index\.html$/,
+        filename: "index.html",
+        route: "index.html",
         getPluginHooks: HtmlRspackPlugin.getCompilationHooks,
         ...options.html,
       },
@@ -118,7 +118,7 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       mode,
       app: posix.join(compiler.context, app),
       worker: posix.join(compiler.context, worker),
-      templatePattern: html.pattern.source,
+      route: html.route,
     });
 
     writeFileSync(entryPath, entryContent);
@@ -209,7 +209,10 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
 
     compiler.hooks.thisCompilation.tap(SwsrRspackPluginName, (compilation) => {
       const match = (outputName: string) =>
-        html.match === true || html.match(outputName);
+        typeof html.filename === "string"
+          ? html.filename === outputName
+          : html.filename.test(outputName);
+
       const hooks = html.getPluginHooks(compilation) as IHtmlPluginHooks;
 
       // defer to async
@@ -236,38 +239,42 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
         return ctx;
       });
 
-      // inline html content to swsr.js
+      // find corresponding outputName
+      let outputName = "index.html";
       hooks.afterEmit.tap(SwsrRspackPluginName, (ctx) => {
         if (match(ctx.outputName)) {
-          const templateContent = compilation
-            .getAsset(ctx.outputName)
-            ?.source.source()
-            .toString();
+          outputName = ctx.outputName;
+        }
 
-          if (!templateContent) {
-            logger.error("Failed to read html source after emit");
-            return ctx;
+        return ctx;
+      });
+
+      // inline html content to swsr.js
+      compilation.hooks.afterProcessAssets.tap(
+        SwsrRspackPluginName,
+        (assets) => {
+          const template = assets[outputName]?.source().toString();
+
+          if (!template) {
+            logger.error("Failed to get html asset, outputName=" + outputName);
+            return;
           }
 
           writeFile(
             entryPath,
-            entryContent.replace(
-              "{{templateContent}}",
-              templateContent.replace("`", "\\`")
-            ),
+            entryContent.replace("{{template}}", template.replace("`", "\\`")),
             (err) => {
               if (err) {
                 logger.error(`Failed to write entry file to ${entryPath}`, err);
                 return;
               }
-
-              setTimeout(start, 300);
             }
           );
         }
+      );
 
-        return ctx;
-      });
+      // start swsr compiling
+      compiler.hooks.done.tap(SwsrRspackPluginName, start);
     });
   }
 }

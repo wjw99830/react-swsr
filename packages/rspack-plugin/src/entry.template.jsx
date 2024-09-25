@@ -7,8 +7,9 @@ const worker = require("{{worker}}");
 
 const ContentPlaceholder = "{{ContentPlaceholder}}";
 const ScriptPlaceholder = "{{ScriptPlaceholder}}";
-const TemplateContent = `{{templateContent}}`;
-const TemplatePattern = /{{templatePattern}}/;
+const Template = `{{template}}`;
+const RouteString = "{{routeString}}";
+const RouteRegExp = /{{routeRegExp}}/;
 const StreamEnding = "__SWSR_STREAM_ENDING__";
 const StreamEndingRegex = new RegExp(`${StreamEnding}$`);
 
@@ -17,7 +18,7 @@ const encoder = new TextEncoder();
 
 addEventListener("install", () => {
   skipWaiting();
-  /* @__PURE__ */ log("Activated");
+  log("Activated");
 });
 
 addEventListener("fetch", (e) => {
@@ -25,13 +26,12 @@ addEventListener("fetch", (e) => {
   const request = e.request;
   const { pathname } = new URL(request.url);
 
-  console.log("TemplatePattern", TemplatePattern);
-  console.log("pathname", pathname);
-  console.log("match", TemplatePattern.test(pathname));
-
   e.respondWith(
-    request.mode === "navigate" && TemplatePattern.test(pathname)
-      ? render(TemplateContent, request)
+    request.mode === "navigate" &&
+      (RouteString
+        ? pathname.endsWith(RouteString)
+        : RouteRegExp.test(pathname))
+      ? render(Template, request)
           .then(
             (response) =>
               new Response(response, {
@@ -46,9 +46,7 @@ addEventListener("fetch", (e) => {
           )
           .catch((error) => {
             console.error(error);
-            /* @__PURE__ */ log(
-              "Failed to render due to error above, fallback to CSR"
-            );
+            log("Failed to render due to error above, fallback to CSR");
             return fetch(request);
           })
       : fetch(request)
