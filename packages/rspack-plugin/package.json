@@ -1,6 +1,7 @@
 {
   "name": "@react-swsr/rspack-plugin",
-  "version": "0.0.2",
+  "version": "0.0.3",
+  "private": false,
   "description": "Build swsr bundle for react swsr",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,7 +16,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsup && cp -f src/entry.template.jsx dist",
-    "version": "git add -A && git commit -m \"chore(rspack-plugin): release\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
+    "prepublishOnly": "pnpm build",
+    "version": "git add -A && git commit -m \"chore(rspack-plugin): release\" && pnpm publish --access public --registry https://registry.npmjs.org"
   },
   "dependencies": {
     "@rspack/core": "1",

@@ -1,7 +1,7 @@
-import { posix } from "path";
-import * as cheerio from "cheerio";
-import { existsSync, mkdirSync, writeFile, writeFileSync } from "fs";
-import type { Callback } from "@rspack/lite-tapable";
+import { posix } from 'path';
+import * as cheerio from 'cheerio';
+import { existsSync, mkdirSync, writeFile, writeFileSync } from 'fs';
+import type { Callback } from '@rspack/lite-tapable';
 import {
   Compilation,
   Compiler,
@@ -11,21 +11,17 @@ import {
   RspackPluginInstance,
   Stats,
   Watching,
-} from "@rspack/core";
-import { ScriptPlaceholder } from "../../shared";
-import merge from "webpack-merge";
-import { logger } from "rslog";
-import { createEntry } from "./entry";
-import {
-  ContentPlaceholder,
-  EntryDirName,
-  SwsrRspackPluginName,
-} from "./constants";
-import { getInheritedOptions, isWebCompiler } from "./utils";
-import type { IHtmlPluginHooks } from "./html";
-import type { RequiredDeep } from "type-fest";
+} from '@rspack/core';
+import { ScriptPlaceholder } from '../../shared';
+import merge from 'webpack-merge';
+import { logger } from 'rslog';
+import { createEntry } from './entry';
+import { ContentPlaceholder, EntryDirName, SwsrRspackPluginName } from './constants';
+import { getInheritedOptions, isWebCompiler } from './utils';
+import type { IHtmlPluginHooks } from './html';
+import type { RequiredDeep } from 'type-fest';
 
-export { SwsrRspackPluginName } from "./constants";
+export { SwsrRspackPluginName } from './constants';
 
 export interface ISwsrRspackPluginHtmlOptions {
   /**
@@ -47,7 +43,7 @@ export interface ISwsrRspackPluginHtmlOptions {
 
 export interface ISwsrRspackPluginOptions {
   /** rendering mode */
-  mode: "string" | "stream";
+  mode: 'string' | 'stream';
   /** path of worker module which relative to compiler context */
   worker: string;
   /** path of application root component which relative to compiler context */
@@ -73,18 +69,17 @@ export interface ISwsrRspackPluginOptions {
 }
 
 export class SwsrRspackPlugin implements RspackPluginInstance {
-  private options: RequiredDeep<Omit<ISwsrRspackPluginOptions, "bundler">> &
-    Pick<ISwsrRspackPluginOptions, "bundler">;
+  private options: RequiredDeep<Omit<ISwsrRspackPluginOptions, 'bundler'>> & Pick<ISwsrRspackPluginOptions, 'bundler'>;
 
   constructor(options: ISwsrRspackPluginOptions) {
     this.options = {
-      entry: "",
-      selector: "#root",
-      filename: "swsr.js",
+      entry: '',
+      selector: '#root',
+      filename: 'swsr.js',
       ...options,
       html: {
-        filename: "index.html",
-        route: "index.html",
+        filename: 'index.html',
+        route: 'index.html',
         getPluginHooks: HtmlRspackPlugin.getCompilationHooks,
         ...options.html,
       },
@@ -97,23 +92,14 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       return;
     }
 
-    const {
-      mode,
-      app,
-      worker,
-      entry,
-      selector,
-      filename,
-      html,
-      bundler = {},
-    } = this.options;
-    const swsrCompilerName = entry ? `${entry}-swsr` : "swsr";
+    const { mode, app, worker, entry, selector, filename, html, bundler = {} } = this.options;
+    const swsrCompilerName = entry ? `${entry}-swsr` : 'swsr';
 
     if (!existsSync(EntryDirName)) {
       mkdirSync(EntryDirName);
     }
 
-    const entryPath = `${EntryDirName}/${entry ? `${entry}.` : ""}entry.jsx`;
+    const entryPath = `${EntryDirName}/${entry ? `${entry}.` : ''}entry.jsx`;
     const entryContent = createEntry({
       mode,
       app: posix.join(compiler.context, app),
@@ -128,7 +114,7 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
         // default
         {
           name: swsrCompilerName,
-          target: ["webworker", "es5"],
+          target: ['webworker', 'es5'],
           module: {
             generator: {
               asset: {
@@ -154,21 +140,15 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       }
 
       if (!stats) {
-        logger.error(
-          `Compile successfully, but stats not generated (${swsrCompilerName})`
-        );
+        logger.error(`Compile successfully, but stats not generated (${swsrCompilerName})`);
         return;
       }
 
       if (stats.hasErrors()) {
         // only print entry's error
-        const errors = stats.compilation.errors.filter((it) =>
-          it.message.includes("/node_modules/.swsr/")
-        );
+        const errors = stats.compilation.errors.filter((it) => it.message.includes('/node_modules/.swsr/'));
         if (errors.length) {
-          errors.forEach((it) =>
-            logger.error(`Compile failed (${swsrCompilerName})\n${it.message}`)
-          );
+          errors.forEach((it) => logger.error(`Compile failed (${swsrCompilerName})\n${it.message}`));
         } else {
           logger.error(
             `Compile failed (${swsrCompilerName}). It seems that some error occured in the web compiler, check its errors.`
@@ -177,11 +157,7 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
         return;
       }
 
-      logger.ready(
-        `Compiled in ${
-          stats.endTime! - stats.startTime!
-        }ms (${swsrCompilerName})`
-      );
+      logger.ready(`Compiled in ${stats.endTime! - stats.startTime!}ms (${swsrCompilerName})`);
     };
 
     let watching: Watching | undefined;
@@ -199,19 +175,20 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
     function start() {
       if (!initialized) {
         initialized = true;
-        if (options.mode === "development") {
+        if (options.mode === 'development') {
           watch();
         } else {
-          swsrCompiler.run(onRun);
+          swsrCompiler.run((e, stats) => {
+            onRun(e, stats);
+            swsrCompiler.close(() => {});
+          });
         }
       }
     }
 
     compiler.hooks.thisCompilation.tap(SwsrRspackPluginName, (compilation) => {
       const match = (outputName: string) =>
-        typeof html.filename === "string"
-          ? html.filename === outputName
-          : html.filename.test(outputName);
+        typeof html.filename === 'string' ? html.filename === outputName : html.filename.test(outputName);
 
       const hooks = html.getPluginHooks(compilation) as IHtmlPluginHooks;
 
@@ -233,14 +210,14 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
         if (match(ctx.outputName)) {
           const $ = cheerio.load(ctx.html);
           $(selector).append(ContentPlaceholder);
-          $("body").append(ScriptPlaceholder);
+          $('body').append(ScriptPlaceholder);
           ctx.html = $.html() || ctx.html;
         }
         return ctx;
       });
 
       // find corresponding outputName
-      let outputName = "index.html";
+      let outputName = 'index.html';
       hooks.afterEmit.tap(SwsrRspackPluginName, (ctx) => {
         if (match(ctx.outputName)) {
           outputName = ctx.outputName;
@@ -250,28 +227,21 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       });
 
       // inline html content to swsr.js
-      compilation.hooks.afterProcessAssets.tap(
-        SwsrRspackPluginName,
-        (assets) => {
-          const template = assets[outputName]?.source().toString();
+      compilation.hooks.afterProcessAssets.tap(SwsrRspackPluginName, (assets) => {
+        const template = assets[outputName]?.source().toString();
 
-          if (!template) {
-            logger.error("Failed to get html asset, outputName=" + outputName);
+        if (!template) {
+          logger.error('Failed to get html asset, outputName=' + outputName);
+          return;
+        }
+
+        writeFile(entryPath, entryContent.replace('{{template}}', template.replace('`', '\\`')), (err) => {
+          if (err) {
+            logger.error(`Failed to write entry file to ${entryPath}`, err);
             return;
           }
-
-          writeFile(
-            entryPath,
-            entryContent.replace("{{template}}", template.replace("`", "\\`")),
-            (err) => {
-              if (err) {
-                logger.error(`Failed to write entry file to ${entryPath}`, err);
-                return;
-              }
-            }
-          );
-        }
-      );
+        });
+      });
 
       // start swsr compiling
       compiler.hooks.done.tap(SwsrRspackPluginName, start);
