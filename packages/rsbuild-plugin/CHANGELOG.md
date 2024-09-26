@@ -1,5 +1,9 @@
 # @react-swsr/rsbuild-plugin
 
+## 0.0.4
+
+- Update @react-swsr/rspack-plugin@0.0.3
+
 ## 0.0.3
 
 - Based on @react-swsr/rspack-plugin
