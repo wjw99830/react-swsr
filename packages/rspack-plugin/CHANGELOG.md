@@ -1,5 +1,9 @@
 # @react-swsr/rspack-plugin
 
+## 0.0.4
+
+- refactor: provide more runtime capacities
+
 ## 0.0.3
 
 - fix: close the swsr compiler at production mode

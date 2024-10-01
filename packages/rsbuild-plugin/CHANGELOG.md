@@ -1,5 +1,9 @@
 # @react-swsr/rsbuild-plugin
 
+## 0.0.5
+
+- chore: upgrade rspack plugin to 0.0.5
+
 ## 0.0.4
 
 - Update @react-swsr/rspack-plugin@0.0.3

@@ -1,6 +1,6 @@
 {
   "name": "@react-swsr/rsbuild-plugin",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Build swsr bundle for react swsr",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

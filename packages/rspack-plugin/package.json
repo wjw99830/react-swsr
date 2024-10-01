@@ -1,6 +1,6 @@
 {
   "name": "@react-swsr/rspack-plugin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": false,
   "description": "Build swsr bundle for react swsr",
   "main": "./dist/index.js",
