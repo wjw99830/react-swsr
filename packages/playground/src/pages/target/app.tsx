@@ -1,16 +1,13 @@
-import "./app.css";
-import { Use, useStringChunks } from "@react-swsr/runtime";
-import { Skeleton } from "../../components/skeleton";
-import { getPost, getComments } from "./worker";
-import { IComment, IPost } from "../../typings/json-placeholder";
+import './app.css';
+import { Use, useChunks } from '@react-swsr/runtime';
+import { Skeleton } from '../../components/skeleton';
+import { getPost, getComments } from './api';
+import { IComment, IPost } from '../../typings/json-placeholder';
 
 export default () => {
-  const chunks = useStringChunks<{
-    getPost: IPost;
-    getComments: IComment[];
-  }>() || {
-    getPost: getPost(new Request(location.href)),
-    getComments: getComments(new Request(location.href)),
+  const chunks = useChunks<{ post: IPost; comments: IComment[] }>() || {
+    post: getPost(new Request(location.href)),
+    comments: getComments(new Request(location.href)),
   };
 
   return (
@@ -25,7 +22,7 @@ export default () => {
           <hr />
 
           <Use
-            chunk={chunks.getPost}
+            chunk={chunks.post}
             pending={
               <>
                 <Skeleton Tag="h2" width={400} height={36} />
@@ -49,7 +46,7 @@ export default () => {
           <hr />
 
           <Use
-            chunk={chunks.getComments}
+            chunk={chunks.comments}
             pending={new Array(5).fill(0).map((_, index) => (
               <section key={index} className="comment">
                 <Skeleton Tag="p" className="comment-name" width={256} />

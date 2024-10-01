@@ -1,52 +1,49 @@
-import { renderToReadableStream, renderToString } from "react-dom/server";
-import { __internal__ } from "@react-swsr/runtime";
-import App from "{{app}}";
+import { renderToReadableStream, renderToString } from 'react-dom/server';
 
-const { StreamContext, StringContext, log } = __internal__;
-const worker = require("{{worker}}");
+const Target = (() => {
+  try {
+    new ReadableStream({ type: 'bytes' });
+    return 'stream';
+  } catch (error) {
+    return 'string';
+  }
+})();
 
-const ContentPlaceholder = "{{ContentPlaceholder}}";
-const ScriptPlaceholder = "{{ScriptPlaceholder}}";
+self.__SWSR_RENDERING_TARGET__ = Target;
+
+const { SwsrContext } = require('@react-swsr/runtime').__internal__;
+const { default: App } = require('{{app}}');
+const { match = defaultMatch, onResponse, onRenderError, ...worker } = require('{{worker}}');
+
+const ContentPlaceholder = '{{ContentPlaceholder}}';
+const ScriptPlaceholder = '{{ScriptPlaceholder}}';
 const Template = `{{template}}`;
-const RouteString = "{{routeString}}";
-const RouteRegExp = /{{routeRegExp}}/;
-const StreamEnding = "__SWSR_STREAM_ENDING__";
+const StreamEnding = '__SWSR_STREAM_ENDING__';
 const StreamEndingRegex = new RegExp(`${StreamEnding}$`);
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
-addEventListener("install", () => {
-  skipWaiting();
-  log("Activated");
-});
-
-addEventListener("fetch", (e) => {
+addEventListener('fetch', (e) => {
   /** @type {Request} */
   const request = e.request;
-  const { pathname } = new URL(request.url);
 
   e.respondWith(
-    request.mode === "navigate" &&
-      (RouteString
-        ? pathname.endsWith(RouteString)
-        : RouteRegExp.test(pathname))
+    request.mode === 'navigate' && match(request)
       ? render(Template, request)
-          .then(
-            (response) =>
-              new Response(response, {
-                status: 200,
-                headers: {
-                  "Content-Type": "text/html",
-                  ...("{{mode}}" === "stream"
-                    ? { "Transfer-Encoding": "chunked" }
-                    : {}),
-                },
-              })
-          )
+          .then((body) => {
+            const response = new Response(body, {
+              status: 200,
+              headers: {
+                'Content-Type': 'text/html',
+                ...(Target === 'stream' ? { 'Transfer-Encoding': 'chunked' } : {}),
+              },
+            });
+            onResponse?.(response);
+            return response;
+          })
           .catch((error) => {
-            console.error(error);
-            log("Failed to render due to error above, fallback to CSR");
+            onRenderError?.(error);
             return fetch(request);
           })
       : fetch(request)
@@ -60,7 +57,7 @@ addEventListener("fetch", (e) => {
  * @returns
  */
 function render(template, request) {
-  if ("{{mode}}" === "string") {
+  if (Target === 'string') {
     return new Promise((resolve, reject) => {
       try {
         resolve(renderToStringHTML(template, request));
@@ -88,15 +85,15 @@ function renderToStringHTML(template, request) {
       return chunks;
     }, {});
     const content = renderToString(
-      <StringContext.Provider value={{ chunks }}>
+      <SwsrContext.Provider value={chunks}>
         <App />
-      </StringContext.Provider>
+      </SwsrContext.Provider>
     );
     return template
       .replace(ContentPlaceholder, content)
       .replace(
         ScriptPlaceholder,
-        `<script id="swsr-runtime">window.__SWSR_MODE__='string';window.__SWSR_CHUNKS__=${JSON.stringify(
+        `<script id="swsr-runtime">window.__SWSR_RENDERING_TARGET__='string';window.__SWSR_CHUNKS__=${JSON.stringify(
           chunks
         )};</script>`
       );
@@ -113,11 +110,7 @@ function renderToStreamingHTML(template, request) {
   const keys = Object.keys(worker);
   /** @type {{ key: string; promise: Promise<unknown> }[]} */
   const chunks = keys.map((key) => ({ key, promise: worker[key](request) }));
-  const ts = new TransformStream(
-    undefined,
-    { highWaterMark: 0 },
-    { highWaterMark: 0 }
-  );
+  const ts = new TransformStream(undefined, { highWaterMark: 0 }, { highWaterMark: 0 });
   const writer = ts.writable.getWriter();
 
   // Inject scripts for client <Suspense /> rendering
@@ -125,19 +118,13 @@ function renderToStreamingHTML(template, request) {
     promise.then(
       (value) =>
         writer.write(
-          encoder.encode(
-            `<script>window.__SWSR_CHUNK_CONNECTIONS__.${key}.resolve(${JSON.stringify(
-              value
-            )})</script>`
-          )
+          encoder.encode(`<script>window.__SWSR_CHUNK_CONNECTIONS__.${key}.resolve(${JSON.stringify(value)})</script>`)
         ),
       (error) =>
         writer.write(
           encoder.encode(
             `<script>window.__SWSR_CHUNK_CONNECTIONS__.${key}.reject(${
-              typeof error?.message === "undefined"
-                ? ""
-                : JSON.stringify(error.message)
+              typeof error?.message === 'undefined' ? '' : JSON.stringify(error.message)
             })</script>`
           )
         )
@@ -146,21 +133,19 @@ function renderToStreamingHTML(template, request) {
 
   return renderToReadableStream(
     <>
-      <StreamContext.Provider
-        value={{
-          chunks: chunks.reduce((map, chunk) => {
-            map[chunk.key] = chunk.promise;
-            return map;
-          }, {}),
-        }}
+      <SwsrContext.Provider
+        value={chunks.reduce((map, chunk) => {
+          map[chunk.key] = chunk.promise;
+          return map;
+        }, {})}
       >
         <App />
-      </StreamContext.Provider>
+      </SwsrContext.Provider>
       {StreamEnding}
     </>
   ).then((rs) => {
     let shellReady = false;
-    let shell = "";
+    let shell = '';
     const reader = rs.getReader();
     reader.read().then(function onRead({ done, value }) {
       if (done) {
@@ -172,13 +157,13 @@ function renderToStreamingHTML(template, request) {
       if (!shellReady) {
         if (content.match(StreamEndingRegex)) {
           // Shell is ready, inject the whole shell to template and send it
-          shell += content.replace(StreamEndingRegex, "");
+          shell += content.replace(StreamEndingRegex, '');
           shellReady = true;
           const html = template
             .replace(ContentPlaceholder, shell)
             .replace(
               ScriptPlaceholder,
-              `<script id="swsr-runtime">window.__SWSR_MODE__='stream';{{StreamRuntime}};__SWSR_CREATE_CONNECTIONS__(${JSON.stringify(
+              `<script id="swsr-runtime">window.__SWSR_RENDERING_TARGET__='stream';{{StreamRuntime}};__SWSR_CREATE_CONNECTIONS__(${JSON.stringify(
                 keys
               )});</script>`
             );
@@ -197,4 +182,14 @@ function renderToStreamingHTML(template, request) {
 
     return ts.readable;
   });
+}
+
+/**
+ *
+ * @param {Request} request
+ * @returns {boolean}
+ */
+function defaultMatch(request) {
+  const { pathname } = new URL(request.url);
+  return pathname.match(/^\/(index(\.html?)?)?$/);
 }

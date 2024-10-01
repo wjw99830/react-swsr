@@ -21,50 +21,42 @@ import { getInheritedOptions, isWebCompiler } from './utils';
 import type { IHtmlPluginHooks } from './html';
 import type { RequiredDeep } from 'type-fest';
 
-export { SwsrRspackPluginName } from './constants';
-
 export interface ISwsrRspackPluginHtmlOptions {
   /**
-   * match the corresponding html file to inline into swsr.js
+   * Match the corresponding html which emitted by html plugin(e.g. `html-rspack-plugin`) and inline to `swsr.js`
    * @default "index.html"
    */
   filename?: string | RegExp;
   /**
-   * match the navigation request
-   * @default "index.html"
-   */
-  route?: string | RegExp;
-  /**
-   * inject some html content for rendering
+   * Inject some html content for rendering
    * @default rspack.HtmlRspackPlugin.getCompilationHooks
    */
   getPluginHooks?(compilation: Compilation): unknown;
 }
 
 export interface ISwsrRspackPluginOptions {
-  /** rendering mode */
-  mode: 'string' | 'stream';
-  /** path of worker module which relative to compiler context */
+  /** ServiceWorker module */
   worker: string;
-  /** path of application root component which relative to compiler context */
+  /** Root component of application */
   app: string;
-  html?: ISwsrRspackPluginHtmlOptions;
   /**
-   * entry name of swsr compiler
+   * Entry name of swsr compiler
    * @default ""
    */
   entry?: string;
   /**
-   * select root element for application rendering
+   * Root element for react rendering
    * @default "#root"
    */
   selector?: string;
   /**
-   * output filename of swsr bundle
+   * Output filename of swsr bundle
    * @default "swsr.js"
    */
   filename?: string;
-  /** bundler configuration */
+  /** Html configuration */
+  html?: ISwsrRspackPluginHtmlOptions;
+  /** Bundler configuration */
   bundler?: Configuration;
 }
 
@@ -79,7 +71,6 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       ...options,
       html: {
         filename: 'index.html',
-        route: 'index.html',
         getPluginHooks: HtmlRspackPlugin.getCompilationHooks,
         ...options.html,
       },
@@ -92,8 +83,8 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
       return;
     }
 
-    const { mode, app, worker, entry, selector, filename, html, bundler = {} } = this.options;
-    const swsrCompilerName = entry ? `${entry}-swsr` : 'swsr';
+    const { app, worker, entry, selector, filename, html, bundler = {} } = this.options;
+    const swsrCompilerName = entry ? `swsr-${entry}` : 'swsr';
 
     if (!existsSync(EntryDirName)) {
       mkdirSync(EntryDirName);
@@ -101,10 +92,8 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
 
     const entryPath = `${EntryDirName}/${entry ? `${entry}.` : ''}entry.jsx`;
     const entryContent = createEntry({
-      mode,
       app: posix.join(compiler.context, app),
       worker: posix.join(compiler.context, worker),
-      route: html.route,
     });
 
     writeFileSync(entryPath, entryContent);
@@ -178,10 +167,7 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
         if (options.mode === 'development') {
           watch();
         } else {
-          swsrCompiler.run((e, stats) => {
-            onRun(e, stats);
-            swsrCompiler.close(() => {});
-          });
+          swsrCompiler.run(onRun);
         }
       }
     }

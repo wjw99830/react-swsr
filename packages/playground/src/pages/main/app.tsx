@@ -1,21 +1,14 @@
-import { FC } from "react";
-import { register } from "@react-swsr/runtime";
+import { FC } from 'react';
 
 export const App: FC = () => {
   return (
     <div>
       <h1>Main</h1>
       <button
-        style={{ display: "block", marginBottom: 24 }}
-        onClick={() => register("../stream/swsr.js")}
+        style={{ display: 'block', marginBottom: 24 }}
+        onClick={() => navigator.serviceWorker?.register('../swsr.js', { scope: './target' })}
       >
-        streaming rendering
-      </button>
-      <button
-        style={{ display: "block" }}
-        onClick={() => register("../string/swsr.js")}
-      >
-        string rendering
+        register
       </button>
     </div>
   );

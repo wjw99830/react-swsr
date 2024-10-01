@@ -1,5 +1,5 @@
-import { ReactNode, useMemo, Suspense } from "react";
-import { ESwsrChunkStatus, SwsrChunk } from "./typings";
+import { ReactNode, useMemo, Suspense } from 'react';
+import { ESwsrChunkStatus, SwsrChunk } from './chunks';
 
 export interface IUseProps<T> {
   chunk: SwsrChunk<T>;
@@ -20,7 +20,7 @@ export function Use<T>({ chunk, pending, rejected, children }: IUseProps<T>) {
   );
 }
 
-interface IReadProps<T> extends Pick<IUseProps<T>, "children" | "rejected"> {
+interface IReadProps<T> extends Pick<IUseProps<T>, 'children' | 'rejected'> {
   reader: () => ChunkState<T>;
 }
 
@@ -35,7 +35,7 @@ function Read<T>({ reader, children, rejected }: IReadProps<T>) {
     return children?.(state.data);
   }
 
-  return typeof rejected === "function" ? rejected?.(state.error) : rejected;
+  return typeof rejected === 'function' ? rejected?.(state.error) : rejected;
 }
 
 type ChunkState<T> =

@@ -6,22 +6,25 @@ SWSR is a solution which could let your application render in service worker and
 
 ### Worker
 
-`worker.js` is some data fetching functions which run in service worker.
+`worker.js` is a module that run in ServiceWorker environment. It should export some functions to fetch data for rendering. Optionally, it could export `match` and `onResponse` functions to match the corresponding navigation request and do something before responding with `Response` object.
 
 ```ts
-import type { IComment, IPost } from '../../typings/json-placeholder';
+import { getComments, getPost } from './api';
 
-const getPostIdByRequest = (req: Request) => new URL(req.url).searchParams.get('id');
+/** match the corresponding navigation request */
+export const match = (request: Request) => {
+  const url = new URL(request.url);
+  return url.pathname.endsWith('/target');
+};
 
-export const getPost = (req: Request) =>
-  fetch(`https://jsonplaceholder.typicode.com/posts/${getPostIdByRequest(req)}`).then(
-    (response) => response.json() as Promise<IPost>
-  );
+/** called when rendering is finished, ready to respond with `Response` object */
+export const onResponse = (response: Response) => {
+  console.log('onResponse', response);
+};
 
-export const getComments = (req: Request) =>
-  fetch(`https://jsonplaceholder.typicode.com/posts/${getPostIdByRequest(req)}/comments`).then(
-    (response) => response.json() as Promise<IComment[]>
-  );
+export const post = getPost;
+
+export const comments = getComments;
 ```
 
 ### App
@@ -29,15 +32,15 @@ export const getComments = (req: Request) =>
 `<App />` is the root component of application, exported as default.
 
 ```tsx
-import { Use, useStreamChunks } from '@react-swsr/runtime';
-import { getPost, getComments } from './worker';
+import { Use, useChunks } from '@react-swsr/runtime';
+import { getPost, getComments } from './api';
 import { Skeleton } from '../../components/skeleton';
 import type { IComment, IPost } from '../../typings/json-placeholder';
 
 export default () => {
-  const chunks = useStreamChunks<{ getPost: IPost; getComments: IComment[] }>() || {
-    getPost: getPost(new Request(location.href)),
-    getComments: getComments(new Request(location.href)),
+  const chunks = useChunks<{ post: IPost; comments: IComment[] }>() || {
+    post: getPost(new Request(location.href)),
+    comments: getComments(new Request(location.href)),
   };
 
   return (
@@ -45,55 +48,23 @@ export default () => {
       <header>
         <h1>JSON Placeholder</h1>
       </header>
-
       <main>
         <section>
           <h2>Post</h2>
           <hr />
-
-          <Use
-            chunk={chunks.getPost}
-            pending={
-              <>
-                <Skeleton Tag="h2" width={400} height={36} />
-                <Skeleton Tag="p" width="100%" />
-                <Skeleton Tag="p" width="100%" />
-              </>
-            }
-            rejected={(error) => <p>Failed to fetch post: {error}</p>}
-          >
-            {(post) => (
-              <>
-                <h2>{post.title}</h2>
-                <p>{post.body}</p>
-              </>
-            )}
+          <Use chunk={chunks.post} pending={<Skeleton />} rejected={(error) => <p>Failed to fetch post: {error}</p>}>
+            {(post) => <Post data={post} />}
           </Use>
         </section>
-
         <section>
           <h2>Comments</h2>
           <hr />
-
           <Use
-            chunk={chunks.getComments}
-            pending={new Array(5).fill(0).map((_, index) => (
-              <section key={index} className="comment">
-                <Skeleton Tag="p" className="comment-name" width={256} />
-                <Skeleton Tag="p" className="comment-body" width="100%" />
-                <Skeleton Tag="p" className="comment-body" width="100%" />
-              </section>
-            ))}
+            chunk={chunks.comments}
+            pending={<Skeleton />}
             rejected={(error) => <p>Failed to fetch comments: {error}</p>}
           >
-            {(comments) =>
-              comments.map((it) => (
-                <section key={it.id} className="comment">
-                  <p className="comment-name">{it.name}</p>
-                  <p className="comment-body">{it.body}</p>
-                </section>
-              ))
-            }
+            {(comments) => <Comments data={comments} />}
           </Use>
         </section>
       </main>
@@ -111,57 +82,26 @@ import { pluginReact } from '@rsbuild/plugin-react';
 import { swsr } from '@react-swsr/rsbuild-plugin';
 
 export default defineConfig({
-  plugins: [
-    pluginReact(),
-    swsr([
-      {
-        // entry name of swsr compiler
-        entry: 'stream',
-        // rendering mode
-        mode: 'stream',
-        // path of application root component which relative to compiler context
-        app: './src/pages/stream/app.tsx',
-        // path of worker module which relative to compiler context
-        worker: './src/pages/stream/worker.ts',
-        // output filename of swsr bundle
-        filename: 'stream/swsr.js',
-        html: {
-          // match the corresponding html file to inline into swsr.js
-          filename: 'stream/index.html',
-          // match the navigation request
-          route: /stream\/(index(\.html?)?)?/,
-        },
-      },
-      {
-        // entry name of swsr compiler
-        entry: 'string',
-        // rendering mode
-        mode: 'string',
-        // path of application root component which relative to compiler context
-        app: './src/pages/string/app.tsx',
-        // path of worker module which relative to compiler context
-        worker: './src/pages/string/worker.ts',
-        // output filename of swsr bundle
-        filename: 'string/swsr.js',
-        html: {
-          // match the corresponding html file to inline into swsr.js
-          filename: 'string/index.html',
-          // match the navigation request
-          route: /string\/(index(\.html?)?)?/,
-        },
-      },
-    ]),
-  ],
   source: {
     entry: {
       main: './src/pages/main/index.tsx',
-      stream: './src/pages/stream/index.tsx',
-      string: './src/pages/string/index.tsx',
+      target: './src/pages/target/index.tsx',
     },
   },
-  html: {
-    outputStructure: 'nested', // usually use nested directory structure, because the scope of service worker is based on pathname.
-  },
+  plugins: [
+    pluginReact(),
+    swsr({
+      // root component of application
+      app: './src/pages/target/app.tsx',
+      // ServiceWorker module
+      worker: './src/pages/target/worker.ts',
+      // html configurations
+      html: {
+        // match the corresponding html which emitted by html plugin(e.g. `html-rspack-plugin`) and inline to `swsr.js`
+        filename: 'target.html',
+      },
+    }),
+  ],
 });
 ```
 
@@ -169,11 +109,11 @@ export default defineConfig({
 
 ```tsx
 import { createRoot, hydrateRoot } from 'react-dom/client';
-import { getSwsrInfo } from '@react-swsr/runtime';
+import { RenderingTarget } from '@react-swsr/runtime';
 import App from './app';
 
 const root = document.getElementById('root')!;
-if (getSwsrInfo().hit) {
+if (RenderingTarget) {
   // hydrate like SSR
   hydrateRoot(root, <App />);
 } else {
@@ -181,3 +121,9 @@ if (getSwsrInfo().hit) {
   createRoot(root).render(<App />);
 }
 ```
+
+## Rendering Target
+
+Worker prefer to using `renderToStream`. But in some browsers that don't support readable byte stream, use `renderToString` as fallback.
+
+We can get current rendering target by `RenderingTarget` exported from `@react-swsr/runtime`.

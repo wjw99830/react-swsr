@@ -1,19 +1,17 @@
-import { useContext } from "react";
-import { StreamContext, StringContext } from "./internal";
-import { ESwsrChunkStatus, SwsrChunks } from "./typings";
+import { useContext } from 'react';
+import { SwsrContext } from './internal';
 
-export function useStreamChunks<T extends object>() {
-  const ctx = useContext(StreamContext);
-  return typeof window === "undefined"
-    ? (ctx?.chunks as SwsrChunks<T> | undefined)
-    : getStreamChunks<T>();
-}
+export type SwsrChunk<T> = Promise<T> | T | Error;
 
-export function useStringChunks<T extends object>() {
-  const ctx = useContext(StringContext);
-  return typeof window === "undefined"
-    ? (ctx?.chunks as T | undefined)
-    : getStringChunks<T>();
+export type SwsrChunks<T extends object> = {
+  [K in keyof T]: SwsrChunk<T[K]>;
+};
+
+export function useChunks<T extends object>() {
+  const chunks = useContext(SwsrContext);
+  return typeof window === 'undefined'
+    ? (chunks as SwsrChunks<T> | null)
+    : getStringChunks<T>() || getStreamChunks<T>();
 }
 
 function getStreamChunks<T extends object>(): SwsrChunks<T> | undefined {
@@ -56,4 +54,9 @@ declare global {
     __SWSR_CHUNK_CONNECTIONS__?: Record<string, ISwsrChunkConnection>;
     __SWSR_CHUNKS__?: Record<string, unknown>;
   }
+}
+export const enum ESwsrChunkStatus {
+  Pending,
+  Resolved,
+  Rejected,
 }
