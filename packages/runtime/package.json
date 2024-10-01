@@ -18,7 +18,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsup",
-    "version": "git add -A && git commit -m \"chore(runtime): release\" && pnpm build && pnpm publish --access public --registry https://registry.npmjs.org"
+    "prepublishOnly": "pnpm build",
+    "version": "git add -A && git commit -m \"chore(runtime): release\" && pnpm publish --access public --registry https://registry.npmjs.org"
   },
   "peerDependencies": {
     "react": "18"
