@@ -178,19 +178,6 @@ export class SwsrRspackPlugin implements RspackPluginInstance {
 
       const hooks = html.getPluginHooks(compilation) as IHtmlPluginHooks;
 
-      // defer to async
-      hooks.alterAssetTags.tap(SwsrRspackPluginName, (ctx) => {
-        if (match(ctx.outputName)) {
-          ctx.assetTags.scripts.forEach((script) => {
-            if (script.attributes.defer) {
-              delete script.attributes.defer;
-              script.attributes.async = true;
-            }
-          });
-        }
-        return ctx;
-      });
-
       // insert swsr placeholders
       hooks.beforeEmit.tap(SwsrRspackPluginName, (ctx) => {
         if (match(ctx.outputName)) {
